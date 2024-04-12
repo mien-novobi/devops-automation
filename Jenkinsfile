@@ -1,63 +1,41 @@
+def gv
+
 pipeline {
     agent any
+    tools {
+        maven 'maven-3.6'
+    }
     stages {
-        stage('Start up') {
+        stage("init") {
             steps {
-            		slackSend(
-            	     		color: '#00a00d',
-                			message: "[*${currentBuild.fullDisplayName}*] Setting up",
-            			    channel:"#devops-team"
-            		)
-              }
-        }
-
-        
-
-        stage('Deploy approval'){
-          steps {
-            input "Deploy to production?"
-
+                script {
+                    gv = load "script.groovy"
+                }
             }
         }
-    }
-
-
-    post {
-        always {
-
-            slackSend(
-                  color: '#00a00d',
-                  message: "[*${currentBuild.fullDisplayName}*] ends",
-                  channel:"#devops-team"
-            )
-
+        stage("build jar") {
+            steps {
+                script {
+                    echo "building jar"
+                    gv.buildJar()
+                }
+            }
         }
-        success {
-
-            slackSend(
-                  color: '#00a00d',
-                  message: "[*${currentBuild.fullDisplayName}*] succeeeded",
-                  channel:"#devops-team"
-            )
+        stage("build image") {
+            steps {
+                script {
+                    echo "building image"
+                    gv.buildImage()
+                }
+            }
         }
-        unstable {
-
-            slackSend(
-                  color: 'danger',
-                  message: "[*${currentBuild.fullDisplayName}*] unstable",
-                  channel:"#devops-team"
-            )
+        stage("deploy") {
+            steps {
+                script {
+                    echo "deploying"
+                    gv.deployApp()
+                }
+            }
         }
-        failure {
-
-            slackSend(
-                  color: 'danger',
-                  message: "[*${currentBuild.fullDisplayName}*] failed",
-                  channel:"#devops-team"
-            )
-        }
-        changed {
-            echo 'Things were different before...'
-        }
-    }
+    }   
 }
